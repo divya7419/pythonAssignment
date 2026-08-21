@@ -1,0 +1,156 @@
+{
+  "info": {
+    "name": "Aforro Backend Assignment (Round-2)",
+    "description": "Stores, inventory, orders, and product search/autocomplete APIs.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000" },
+    { "key": "store_id", "value": "1" },
+    { "key": "product_id", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Create Order (sufficient stock -> CONFIRMED)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{base_url}}/orders/", "host": ["{{base_url}}"], "path": ["orders", ""] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"store_id\": {{store_id}},\n  \"items\": [\n    { \"product_id\": {{product_id}}, \"quantity_requested\": 1 }\n  ]\n}"
+        }
+      },
+      "response": [
+        {
+          "name": "201 Confirmed",
+          "status": "Created",
+          "code": 201,
+          "body": "{\n  \"id\": 1,\n  \"store\": 1,\n  \"status\": \"CONFIRMED\",\n  \"created_at\": \"2026-08-22T10:00:00Z\",\n  \"items\": [\n    { \"product\": 1, \"quantity_requested\": 1 }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Create Order (insufficient stock -> REJECTED)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{base_url}}/orders/", "host": ["{{base_url}}"], "path": ["orders", ""] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"store_id\": {{store_id}},\n  \"items\": [\n    { \"product_id\": {{product_id}}, \"quantity_requested\": 999999 }\n  ]\n}"
+        }
+      },
+      "response": [
+        {
+          "name": "201 Rejected",
+          "status": "Created",
+          "code": 201,
+          "body": "{\n  \"id\": 2,\n  \"store\": 1,\n  \"status\": \"REJECTED\",\n  \"created_at\": \"2026-08-22T10:00:05Z\",\n  \"items\": [\n    { \"product\": 1, \"quantity_requested\": 999999 }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "List Store Orders",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/stores/{{store_id}}/orders/",
+          "host": ["{{base_url}}"],
+          "path": ["stores", "{{store_id}}", "orders", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "200 OK",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"count\": 2,\n  \"next\": null,\n  \"previous\": null,\n  \"results\": [\n    { \"id\": 2, \"status\": \"REJECTED\", \"created_at\": \"2026-08-22T10:00:05Z\", \"total_items\": 1 },\n    { \"id\": 1, \"status\": \"CONFIRMED\", \"created_at\": \"2026-08-22T10:00:00Z\", \"total_items\": 1 }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "List Store Inventory",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/stores/{{store_id}}/inventory/",
+          "host": ["{{base_url}}"],
+          "path": ["stores", "{{store_id}}", "inventory", ""]
+        }
+      },
+      "response": [
+        {
+          "name": "200 OK",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"count\": 300,\n  \"next\": \"{{base_url}}/stores/1/inventory/?page=2\",\n  \"previous\": null,\n  \"results\": [\n    { \"product_title\": \"Apple Case\", \"price\": \"15.00\", \"category_name\": \"Electronics\", \"quantity\": 42 }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Search Products",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/search/products/?q=wireless&category=Electronics&price_min=10&price_max=100&store_id={{store_id}}&in_stock=true&sort=relevance&page=1&page_size=20",
+          "host": ["{{base_url}}"],
+          "path": ["api", "search", "products", ""],
+          "query": [
+            { "key": "q", "value": "wireless" },
+            { "key": "category", "value": "Electronics" },
+            { "key": "price_min", "value": "10" },
+            { "key": "price_max", "value": "100" },
+            { "key": "store_id", "value": "{{store_id}}" },
+            { "key": "in_stock", "value": "true" },
+            { "key": "sort", "value": "relevance" },
+            { "key": "page", "value": "1" },
+            { "key": "page_size", "value": "20" }
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "200 OK",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"count\": 1,\n  \"next\": null,\n  \"previous\": null,\n  \"results\": [\n    { \"id\": 1, \"title\": \"Wireless Keyboard\", \"description\": \"...\", \"price\": \"85.00\", \"category\": 1, \"category_name\": \"Electronics\", \"created_at\": \"2026-08-22T09:00:00Z\", \"store_quantity\": 20 }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Autocomplete Suggest",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/search/suggest/?q=wire",
+          "host": ["{{base_url}}"],
+          "path": ["api", "search", "suggest", ""],
+          "query": [{ "key": "q", "value": "wire" }]
+        }
+      },
+      "response": [
+        {
+          "name": "200 OK",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"results\": [\"Wireless Keyboard\", \"Wireless Mouse\"]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Swagger / OpenAPI Schema",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "{{base_url}}/api/schema/", "host": ["{{base_url}}"], "path": ["api", "schema", ""] }
+      }
+    },
+    {
+      "name": "Django Admin",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "{{base_url}}/admin/", "host": ["{{base_url}}"], "path": ["admin", ""] }
+      }
+    }
+  ]
+}
