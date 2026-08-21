@@ -12,3 +12,4 @@ media/
 *.egg-info/
 .vscode/
 .idea/
+.claude/
