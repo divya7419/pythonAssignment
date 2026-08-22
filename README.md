@@ -36,7 +36,9 @@ docker-compose up --build
 # in another shell, once the api container is healthy:
 docker-compose exec api python manage.py seed_data
 ```
-- API: http://localhost:8000/
+- API base: `http://localhost:8000/` (no root endpoint — see the API
+  summary table below for actual paths; hitting `/` directly returns a
+  404, which is expected)
 - Swagger UI: http://localhost:8000/api/docs/
 - Django admin: http://localhost:8000/admin/ (create a superuser with
   `docker-compose exec api python manage.py createsuperuser` if needed)

@@ -51,6 +51,16 @@ class ProductSearchTests(TestCase):
         )
         self.assertEqual(response.data["results"][0]["store_quantity"], 20)
 
+    def test_non_numeric_price_min_returns_400_not_500(self):
+        url = reverse("search:product-search")
+        response = self.client.get(url, {"price_min": "abc"})
+        self.assertEqual(response.status_code, 400)
+
+    def test_non_numeric_store_id_returns_400_not_500(self):
+        url = reverse("search:product-search")
+        response = self.client.get(url, {"store_id": "abc"})
+        self.assertEqual(response.status_code, 400)
+
 
 class AutocompleteTests(TestCase):
     def setUp(self):

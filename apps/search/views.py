@@ -1,7 +1,10 @@
+from decimal import Decimal, InvalidOperation
+
 from django.conf import settings
 from django.core.cache import cache
 from django.db.models import Case, IntegerField, Q, Value, When
 from drf_spectacular.utils import OpenApiParameter, OpenApiTypes, extend_schema
+from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -60,6 +63,8 @@ class ProductSearchView(APIView):
         page = params.get("page", "1")
         page_size = params.get("page_size", str(self.pagination_class.page_size))
 
+        self._validate_params(price_min, price_max, store_id)
+
         cache_key = build_search_cache_key(
             {
                 "q": q,
@@ -89,6 +94,22 @@ class ProductSearchView(APIView):
         response = paginator.get_paginated_response(serializer.data)
         cache.set(cache_key, response.data, timeout=settings.SEARCH_CACHE_TTL_SECONDS)
         return response
+
+    def _validate_params(self, price_min, price_max, store_id):
+        """Reject malformed filter values with 400 instead of letting a cast
+        error (ValueError/InvalidOperation) bubble up as an unhandled 500."""
+        if price_min:
+            try:
+                Decimal(price_min)
+            except InvalidOperation:
+                raise ValidationError({"price_min": "Must be a number."})
+        if price_max:
+            try:
+                Decimal(price_max)
+            except InvalidOperation:
+                raise ValidationError({"price_max": "Must be a number."})
+        if store_id and not str(store_id).isdigit():
+            raise ValidationError({"store_id": "Must be a positive integer."})
 
     def _build_queryset(self, q, category, price_min, price_max, store_id, in_stock, sort):
         queryset = Product.objects.select_related("category")
